@@ -1,0 +1,24 @@
+name: glm53-flash-nvfp4-sm120
+
+services:
+  inference:
+    image: glm53-flash-nvfp4-sglang:exact-20260826
+    build:
+      context: .
+      dockerfile: Dockerfile
+      pull: false
+    container_name: glm-5.3-flash-sglang-sm120
+    restart: "no"
+    gpus: all
+    ipc: host
+    shm_size: 32gb
+    security_opt:
+      - label=disable
+    ports:
+      - "8000:30000"
+    volumes:
+      - /mnt/llm_models/GLM-5.3-Flash-NVFP4:/model:ro
+      - /home/ser/.cache/sglang-glm53:/root/.cache:rw
+    environment:
+      NVIDIA_VISIBLE_DEVICES: "GPU-7b5db8b3-3a49-c0a7-b8e4-80dc1bd3e853,GPU-3cece4bc-432e-705e-7324-3f441d9cb4cc,GPU-fa982c97-64af-db6a-2ffb-08380e1f9375,GPU-c6ac75f2-cadf-6ff3-4cab-76c6033c1006"
+      CUDA_DEVICE_ORDER: PCI_BUS_ID

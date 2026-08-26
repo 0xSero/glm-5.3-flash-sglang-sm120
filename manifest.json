@@ -1,0 +1,102 @@
+{
+  "schema": "glm53-flash-exact-docker/v1",
+  "image": "lmsysorg/sglang:glm-5.3-flash@sha256:3a97bd50034ca60c6e6c86b8e36a73675d261f6a5eb71197796aee5175409290",
+  "model": {
+    "repository": "LibertAIDAI/GLM-5.3-Flash-NVFP4",
+    "revision": "9e0d74e3cef17f634e84fb8e2223707e02616290",
+    "served_model_name": "glm-5.3-flash",
+    "host_path": "/mnt/llm_models/GLM-5.3-Flash-NVFP4",
+    "checkpoint_shards": 120,
+    "size_gib": 182,
+    "config_sha256": "a47f597b347010c4d8bca9ef584ce4d2fbf20a0a6ec86ad7694e71184b7e95e5",
+    "safetensors_index_sha256": "f3a4c40897e00fab0de0380b05b66279bc341233cc14fa71a80bab2b683e3b7b",
+    "chat_template_sha256": "41cff9af7b3a86c96751b107a8444f245fbda0bd5320b636a5bb1f7f4ba1a5c3",
+    "generation_config_sha256": "230c30609ecbbb9e6583bedde8e7bdda0c6eb8fe5fad0eaeb3d1b293d751cb4f"
+  },
+  "patches": [
+    {
+      "source": "patches/sglang-glm5_next-debug.py",
+      "target": "/sgl-workspace/sglang/python/sglang/srt/models/glm5_next.py",
+      "sha256": "aeb9eb145958644de548b15031842c8b8c3daac6daa73139d5c676a7a2b211da"
+    },
+    {
+      "source": "patches/sglang-deepseek_nextn-glm53.py",
+      "target": "/sgl-workspace/sglang/python/sglang/srt/models/deepseek_nextn.py",
+      "sha256": "dce70ed7392702154e69433f8faf498fb322eca4890683eb54d7857ae69aaf5a"
+    },
+    {
+      "source": "patches/sglang-quant-utils-sm120.py",
+      "target": "/sgl-workspace/sglang/python/sglang/srt/layers/quantization/utils.py",
+      "sha256": "0814b359c0be04b7021ac0da96a3c58fea83d5c6290483df5b509fac9f196ecf"
+    },
+    {
+      "source": "patches/sglang-modelopt-quant-sm120.py",
+      "target": "/sgl-workspace/sglang/python/sglang/srt/layers/quantization/modelopt_quant.py",
+      "sha256": "10367ba1573c11e5b3c7e88195dab77f0cf76169e5db4dd9baf6d366a8652ead"
+    },
+    {
+      "source": "patches/sglang-flash_mla_sm120-glm53.py",
+      "target": "/sgl-workspace/sglang/python/sglang/kernels/ops/attention/flash_mla_sm120.py",
+      "sha256": "06c7f42a192997ab4be73dad926fe9553ea79708d0e5b1583e26720fc0ef6f8e"
+    },
+    {
+      "source": "patches/sglang-dsa_backend-glm53.py",
+      "target": "/sgl-workspace/sglang/python/sglang/srt/layers/attention/dsa_backend.py",
+      "sha256": "1b786b161e9279b707f6bc24cb31b835bad1fc6a55f12d80dda47ee071636bc7"
+    }
+  ],
+  "hardware": {
+    "gpu_count": 4,
+    "gpu_type": "RTX PRO 6000 Blackwell Workstation Edition (97887 MiB each)",
+    "cuda_arch": "sm_120",
+    "tensor_parallel_size": 4,
+    "expert_parallel_size": 4
+  },
+  "server": {
+    "engine": "sglang",
+    "host_port": "8000",
+    "container_port": 30000,
+    "max_model_len": 1048576,
+    "kv_cache_dtype": "fp8_e4m3",
+    "kv_cache_tokens_per_rank": 3789184,
+    "moe_runner_backend": "flashinfer_cutlass",
+    "attention_backend": "dsa",
+    "dsa_prefill_backend": "flashinfer_sparse_mla",
+    "dsa_decode_backend": "flashinfer_sparse_mla",
+    "linear_attn_backend": "triton",
+    "speculative": {
+      "algorithm": "NEXTN",
+      "num_steps": 5,
+      "eagle_topk": 1,
+      "num_draft_tokens": 6
+    },
+    "parsers": {
+      "reasoning_parser": "glm45",
+      "tool_call_parser": "glm47",
+      "note": "sglang has no --enable-auto-tool-choice flag; tool parsing activates from request tools/tool_choice fields once tool_call_parser is set"
+    },
+    "env_overrides": {
+      "TORCH_CUDA_ARCH_LIST": "12.0a",
+      "FLASHINFER_CUDA_ARCH_LIST": "12.0f",
+      "SGLANG_OPT_USE_TOPK_V2": "0",
+      "SGLANG_OPT_USE_TILELANG_INDEXER": "1",
+      "SGLANG_FP8_PAGED_MQA_LOGITS_TORCH": "1",
+      "SGLANG_OPT_DEEPGEMM_HC_PRENORM": "0",
+      "SGLANG_OPT_FP8_WO_A_GEMM": "0"
+    }
+  },
+  "validation": {
+    "date": "2026-08-26",
+    "health_endpoint": "GET /health -> 200",
+    "coherence": "math, physics-with-LaTeX, and prose all correct; glm45 parser splits reasoning_content vs content cleanly; natural stop reached with no max_tokens cap",
+    "throughput_tok_s_single_stream": {"reasoning_effort_low": 143, "default_max_effort": 208},
+    "chat_template_kwargs": {
+      "reasoning_effort": "'low' | 'high'; anything else incl. unset defaults to 'max'",
+      "clear_thinking": "suppresses stored <think> history except after latest user turn",
+      "warning": "there is no 'thinking': false kwarg; passing it silently behaves as max effort"
+    }
+  },
+  "known_blockers": {
+    "flashinfer_cutedsl_on_sm120": "FlashInfer CuteDSL MoE (flashinfer/jit/moe_utils.py::gen_moe_utils_module) hard-codes supported_major_versions=[10] for its tcgen05-based sm100/sm103 kernels; startup raises 'No supported CUDA architectures found for major versions [10]' on SM120. Do not switch --moe-runner-backend back to flashinfer_cutedsl."
+  }
+}
