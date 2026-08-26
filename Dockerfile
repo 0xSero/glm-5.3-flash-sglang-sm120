@@ -21,6 +21,9 @@ ENV CUDA_DEVICE_ORDER=PCI_BUS_ID \
 
 # SM120 compatibility patches, written over the editable-install sources at the same
 # paths run-sglang.sh bind-mounts, so image behavior matches the live deployment.
+# Multimodal template override: emits <|begin_of_image|><|image|><|end_of_image|> markers the
+# shipped text-only template replaces with an "unable to process" reminder.
+COPY chat-template-mm.jinja /chat-template.jinja
 COPY patches/sglang-glm5_next-debug.py /sgl-workspace/sglang/python/sglang/srt/models/glm5_next.py
 COPY patches/sglang-deepseek_nextn-glm53.py /sgl-workspace/sglang/python/sglang/srt/models/deepseek_nextn.py
 COPY patches/sglang-quant-utils-sm120.py /sgl-workspace/sglang/python/sglang/srt/layers/quantization/utils.py
@@ -52,14 +55,16 @@ CMD ["-m", "sglang.launch_server", \
      "--chunked-prefill-size", "8192", \
      "--max-prefill-tokens", "8192", \
      "--max-running-requests", "8", \
-     "--mem-fraction-static", "0.90", \
+     "--mem-fraction-static", "0.93", \
      "--cuda-graph-max-bs-decode", "8", \
      "--speculative-algorithm", "NEXTN", \
      "--speculative-num-steps", "5", \
      "--speculative-eagle-topk", "1", \
      "--speculative-num-draft-tokens", "6", \
      "--speculative-adaptive", \
-     "--media-url-max-file-size-mb", "1024", \
+     "--media-url-max-file-size-mb", "1024",
+     "--enable-multimodal",
+     "--chat-template", "/chat-template.jinja", \
      "--reasoning-parser", "glm45", \
      "--tool-call-parser", "glm47", \
      "--host", "0.0.0.0", \
