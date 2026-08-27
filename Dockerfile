@@ -55,7 +55,7 @@ CMD ["-m", "sglang.launch_server", \
      "--chunked-prefill-size", "8192", \
      "--max-prefill-tokens", "8192", \
      "--max-running-requests", "8", \
-     "--mem-fraction-static", "0.93", \
+     "--mem-fraction-static", "0.90", \
      "--cuda-graph-max-bs-decode", "8", \
      "--speculative-algorithm", "NEXTN", \
      "--speculative-num-steps", "5", \
